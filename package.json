@@ -1,0 +1,35 @@
+{
+  "name": "dev-job-hub",
+  "version": "1.0.0",
+  "description": "Local-first developer job search, tracking pipeline and interview prep toolkit",
+  "type": "module",
+  "scripts": {
+    "start": "node --no-warnings cli/tracker/server.ts",
+    "search:getonbrd": "node --no-warnings cli/search/getonbrd/src/cli.ts search",
+    "search:hireline": "node --no-warnings cli/search/hireline/src/cli.ts search",
+    "search:linkedin": "node --no-warnings cli/search/linkedin/src/cli.ts search",
+    "search:freehire": "node --no-warnings cli/search/freehire/src/cli.ts search",
+    "tracker:followup": "python3 cli/tracker/tracker.py followup",
+    "tracker:skills": "python3 cli/tracker/tracker.py skills",
+    "tracker:report": "python3 cli/tracker/tracker.py report",
+    "tracker:study": "python3 cli/tracker/study_site.py",
+    "deploy:ghpages": "./scripts/deploy_ghpages.sh"
+  },
+  "keywords": [
+    "job-search",
+    "job-tracker",
+    "career",
+    "developer",
+    "local-first",
+    "offline-dashboard",
+    "pwa",
+    "interview-prep",
+    "linkedin",
+    "hireline",
+    "getonbrd",
+    "freehire",
+    "ai-agent"
+  ],
+  "author": "Lisandro Flores",
+  "license": "MIT"
+}

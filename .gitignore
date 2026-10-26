@@ -1,0 +1,30 @@
+# Dependencias y logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Datos personales y seguimiento real (Privacidad garantizada)
+SEGUIMIENTO_POSTULACIONES.csv
+SEGUIMIENTO.csv
+.dashboard_secret
+.env
+.env.local
+
+# Ofertas y notas reales (conservar plantillas de ejemplo)
+ofertas/*.md
+!ofertas/ejemplo_vacante.md
+notas/*.md
+!notas/PLAN_ESTUDIO.md
+
+# Salidas generadas
+sitio_estudio/
+postulaciones/dashboard_postulaciones.html
+__pycache__/
+*.pyc
+
+# IDEs y SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

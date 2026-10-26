@@ -1,0 +1,3 @@
+fecha,empresa,puesto,url_vacante,fuente,cv_enviado,contacto,estado,proxima_accion,fecha_seguimiento,salario,notas
+2026-10-20,Acme Cloud Technologies,Full Stack Developer,https://example.com/jobs/fullstack-dev,Get on Board,CV_FullStack.pdf,John Doe (LinkedIn),En proceso (Filtro RH),Preparar entrevista técnica con el hiring manager,2026-10-28,35000 MXN neto,"100% Remoto. Stack: React, TypeScript, Node.js, PostgreSQL. Ficha: ofertas/ejemplo_vacante.md."
+2026-10-22,Innovatech Solutions,Frontend React Engineer,https://example.com/jobs/react-frontend,Hireline,CV_Frontend.pdf,,Postulado,Revisar bandeja de entrada y confirmar recepción,2026-10-29,30000 MXN neto,"Híbrido. Enfoque en Next.js y Tailwind CSS. Revisar status el próximo lunes."
