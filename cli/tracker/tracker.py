@@ -40,6 +40,10 @@ NOTAS_DIR = os.path.join(ROOT_DIR, "notas")
 PDFS_DIR = os.path.join(ROOT_DIR, "pdfs_oficiales")
 HTML_CV_DIR = os.path.join(ROOT_DIR, "fuentes_html")
 DEFAULT_HTML_OUT = os.path.join(ROOT_DIR, "postulaciones", "dashboard_postulaciones.html")
+DASHBOARD_BANNERS_PATH = os.environ.get(
+    "DASHBOARD_BANNERS_PATH",
+    os.path.join(ROOT_DIR, "dashboard_banners.json"),
+)
 
 CANDIDATE_NAME = os.environ.get("CANDIDATE_NAME", "Developer")
 CANDIDATE_INITIALS = os.environ.get("CANDIDATE_INITIALS", "".join([w[0] for w in CANDIDATE_NAME.split()][:2]).upper() or "DEV")
@@ -80,6 +84,20 @@ def load_rows():
     with open(CSV_PATH, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         return [r for r in reader if any(r.values())]
+
+
+def load_dashboard_banners():
+    """Load optional user-specific dashboard banners without embedding them in code."""
+    if not os.path.isfile(DASHBOARD_BANNERS_PATH):
+        return []
+    try:
+        with open(DASHBOARD_BANNERS_PATH, "r", encoding="utf-8") as f:
+            banners = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"No se pudo leer {DASHBOARD_BANNERS_PATH}: {exc}") from exc
+    if not isinstance(banners, list):
+        raise RuntimeError(f"{DASHBOARD_BANNERS_PATH} debe contener una lista JSON")
+    return banners
 
 
 def compute_skills():
@@ -1144,12 +1162,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <div class="kpi-card">
           <div class="kpi-val" style="color: var(--accent)" id="kpi-total">__TOTAL__</div>
           <div class="kpi-lbl">Postulaciones registradas</div>
-          <span class="kpi-sub badge-blue" id="kpi-sub-total"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 13 al 21 oct 2026</span>
+          <span class="kpi-sub badge-blue" id="kpi-sub-total"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Seguimiento registrado</span>
         </div>
         <div class="kpi-card">
           <div class="kpi-val" style="color: var(--green)" id="kpi-en-proceso">__EN_PROCESO_COUNT__</div>
           <div class="kpi-lbl">Procesos activos / Entrevistas</div>
-          <span class="kpi-sub badge-green" id="kpi-sub-proceso"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ALPRO + ALTEN + AMK + Accenture</span>
+          <span class="kpi-sub badge-green" id="kpi-sub-proceso"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Procesos en seguimiento</span>
         </div>
         <div class="kpi-card">
           <div class="kpi-val" style="color: var(--purple)"><span id="kpi-conversion">__CONVERSION_RATE__</span>%</div>
@@ -2016,7 +2034,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
 
 def encrypt_payload(payload_dict, password):
-    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    except ImportError as exc:
+        raise RuntimeError(
+            "El cifrado requiere cryptography. Instala con: python3 -m pip install cryptography"
+        ) from exc
     import hashlib
     import base64
 
@@ -2040,39 +2063,8 @@ def cmd_report(args):
 
     total_offers, skills_list = compute_skills()
 
-    priority_ofertas = [
-        "2026-10-16_ALPRO_Hireline_FullStack_Engineer_SaaS.md",
-        "2026-10-13_Afya_Medik_Programador_Jr_AI_Native.md",
-        "2026-10-13_ALTEN_Jr_FrontEnd.md",
-        "2026-10-19_Accenture_Academia_Java_APX.md",
-        "2026-10-23_Thomson_Reuters_Software_Engineer.md",
-        "2026-10-23_LEXA_Consulting_Desarrollador_BackEnd_Puebla.md",
-        "2026-10-22_ED3_Group_Programador_Junior.md",
-        "2026-10-21_Salesforce_Software_Engineer_Jr_Automation.md",
-        "2026-10-21_Hireline_FullStack_IA.md",
-        "2026-10-16_Ellucian_Software_Engineer_I_Puebla.md",
-        "2026-10-16_Neumo_Jr_Software_Engineer_MX.md",
-        "2026-10-16_Metrica_Frontend_Angular_Jr.md",
-        "2026-10-13_Datamatic_Software_AI_Developer.md",
-    ]
-    ofertas_docs = load_markdown_collection(OFERTAS_DIR, priority_ofertas)
-
-    priority_notas = [
-        "ROADMAP_ACTIVIDADES_OCTUBRE.md",
-        "DEFENSA_CV.md",
-        "PLAN_ESTUDIO_POSTULACIONES.md",
-        "GUIA_ENTREVISTA_NGICAJA.md",
-        "ESTRATEGIA_NETWORKING_LINKEDIN.md",
-        "GUIA_ENTREVISTA_ACCENTURE_JAVA.md",
-        "GUIA_MEJORA_INGLES_EFSET.md",
-        "GUIA_ENTREVISTA_TECNICA_BM_ALTEN.md",
-        "PLAN_CERTIFICACIONES.md",
-        "ACCIONES_MANUALES.md",
-        "ROADMAP_BUSQUEDA.md",
-        "PRIORIDAD_PLATAFORMAS.md",
-        "HORARIO.md",
-    ]
-    notas_docs = load_markdown_collection(NOTAS_DIR, priority_notas)
+    ofertas_docs = load_markdown_collection(OFERTAS_DIR)
+    notas_docs = load_markdown_collection(NOTAS_DIR)
 
     pdfs_list = []
     if os.path.isdir(PDFS_DIR):
@@ -2109,54 +2101,7 @@ def cmd_report(args):
             r_copy["stage"] = "activa"
             activas.append(r_copy)
 
-    priority_banners = [
-        {
-            "priority": "Prioridad 1 &middot; Lunes 26 de octubre (4:00 PM)",
-            "stageBadge": "Entrevista Agendada (Meet)",
-            "title": "ALPRO (alpro.ai) &mdash; Full-Stack Engineer &middot; SaaS B2B PropTech",
-            "tags": [
-                {"lbl": "Modalidad", "val": "100% Remoto México (Horario CDMX) &middot; $25,000–$35,000 MXN est.", "icon": "home"},
-                {"lbl": "Entrevistadores", "val": "Ricardo Cruz (Co-founder) y Jesús Soto (Tech Lead) &middot; 3 bloques de 10 min", "icon": "briefcase"},
-                {"lbl": "Stack", "val": "React, Vite, Node.js, Express, TypeScript, PostgreSQL RLS, 1,082 Tests", "icon": "code"},
-            ],
-            "actions": [
-                {"btnClass": "btn btn-success", "label": "Entrar a Google Meet (4:00 PM)", "href": "https://meet.google.com/tyf-rpzr-gad"},
-                {"btnClass": "btn btn-primary", "label": "Ficha ALPRO", "type": "ofertas", "file": "2026-10-16_ALPRO_Hireline_FullStack_Engineer_SaaS.md"},
-                {"btnClass": "btn", "label": "Biblia Defensa CV", "type": "notas", "file": "DEFENSA_CV.md"},
-                {"btnClass": "btn", "label": "Guion y Manual Técnico", "type": "notas", "file": "PLAN_ESTUDIO_POSTULACIONES.md"},
-                {"btnClass": "btn", "label": "Arquitectura NgiCaja & CV", "type": "notas", "file": "GUIA_ENTREVISTA_NGICAJA.md"},
-                {"btnClass": "btn", "label": "Networking LinkedIn (4:35 PM)", "type": "notas", "file": "ESTRATEGIA_NETWORKING_LINKEDIN.md"},
-            ],
-        },
-        {
-            "priority": "Prioridad 2 &middot; Semana 26&ndash;30 de octubre",
-            "stageBadge": "Técnica pendiente",
-            "title": "AMK Farma (Afya Medik) &mdash; Programador/a Junior AI Native",
-            "tags": [
-                {"lbl": "Modalidad", "val": "100% Remoto (confirmado en llamada)", "icon": "home"},
-                {"lbl": "Salario", "val": "$16,200 netos + vales ($18,000 MXN libres)", "icon": "dollar"},
-                {"lbl": "Stack Técnico", "val": "TypeScript, Webhooks, n8n, SQL y validación de código IA", "icon": "code"},
-            ],
-            "actions": [
-                {"btnClass": "btn btn-success", "label": "Guía técnica AMK", "type": "ofertas", "file": "2026-10-13_Afya_Medik_Programador_Jr_AI_Native.md"},
-                {"btnClass": "btn", "label": "Agenda semanal", "type": "notas", "file": "ROADMAP_ACTIVIDADES_OCTUBRE.md"},
-                {"btnClass": "btn", "label": "Plan certificaciones", "type": "notas", "file": "PLAN_CERTIFICACIONES.md"},
-            ],
-        },
-        {
-            "priority": "Prioridad 3 &middot; Seguimiento Martes 27 de octubre",
-            "stageBadge": "Feedback E2 / Referido",
-            "title": "ALTEN México (Provident) &amp; Accenture (Java APX)",
-            "tags": [
-                {"lbl": "ALTEN", "val": "Entrevista E2 (Técnica + BM) completada el 20/oct &middot; En espera de resolución", "icon": "mapPin"},
-                {"lbl": "Accenture", "val": "Referido interno gestionado por Ricardo Vallejo con Talent Acquisition", "icon": "briefcase"},
-            ],
-            "actions": [
-                {"btnClass": "btn btn-success", "label": "Ficha ALTEN", "type": "ofertas", "file": "2026-10-13_ALTEN_Jr_FrontEnd.md"},
-                {"btnClass": "btn", "label": "Guía Java Accenture", "type": "notas", "file": "GUIA_ENTREVISTA_ACCENTURE_JAVA.md"},
-            ],
-        },
-    ]
+    priority_banners = load_dashboard_banners()
 
     payload = {
         "generatedAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -2265,4 +2210,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

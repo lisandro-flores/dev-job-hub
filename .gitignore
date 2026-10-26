@@ -8,6 +8,7 @@ yarn-error.log*
 SEGUIMIENTO_POSTULACIONES.csv
 SEGUIMIENTO.csv
 .dashboard_secret
+dashboard_banners.json
 .env
 .env.local
 

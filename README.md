@@ -4,7 +4,7 @@
 > *Gestiona tu búsqueda de empleo tech como código: 100% privado, sin bases de datos externas, sin suscripciones y con cero dependencias externas.*
 
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20(native%20only)-brightgreen)](package.json)
-[![Node.js](https://img.shields.io/badge/node.js-%3E%3D20-blue)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node.js-%3E%3D22.6-blue)](https://nodejs.org/)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Local-First](https://img.shields.io/badge/data-100%25%20local%20%26%20git--native-success)](#-privacidad-y-filosofía-local-first)
@@ -18,11 +18,13 @@ La mayoría de herramientas para buscar empleo en tecnología caen en dos extrem
 `dev-job-hub` unifica todo el ciclo de búsqueda en una herramienta para desarrolladores:
 
 1. **Buscador Multi-Fuente CLI:** Motores de búsqueda integrados para **Get on Board** (LATAM y Remoto), **Hireline** (TI en México), **LinkedIn** (búsqueda pública global) y **Freehire** (agregador global de más de 50 ATS).
-2. **Cero Dependencias (`Zero Dependencies`):** Todo funciona directamente con librerías nativas de Node.js y Python 3 estándar. No requiere `npm install` de librerías de terceros ni entornos virtuales con `pip`.
+2. **Sin dependencias JavaScript:** Los CLIs usan APIs nativas de Node.js. El cifrado del dashboard requiere opcionalmente `cryptography` y los iconos PNG de la PWA requieren opcionalmente Pillow.
 3. **Pipeline en Texto Plano (Git-Native):** Tu embudo vive en un archivo `CSV` estructurado y fichas en `Markdown`. Si sabes usar Git, sabes usar `dev-job-hub`.
 4. **Mapa de Calor de Habilidades (`skills`):** Analiza automáticamente las ofertas guardadas y te muestra qué tecnologías, frameworks y librerías son las más demandadas en tu mercado objetivo.
 5. **Centro de Mando Offline & PWA Móvil:** Genera un dashboard HTML interactivo con búsqueda, métricas de conversión, modo entrevista y una aplicación web progresiva (PWA) para repasar notas técnicas desde el teléfono sin conexión.
 6. **Listo para Agentes de IA:** Incluye skills (`SKILL.md`) listos para usar con asistentes como **Antigravity**, **Cursor**, **Claude Code** o **Cline**.
+
+> Requisitos: Node.js 22.6+ y Python 3.8+. La búsqueda requiere conexión; el tracker y la PWA generada funcionan localmente.
 
 ---
 
@@ -105,6 +107,11 @@ npm run tracker:report
 python3 cli/tracker/tracker.py report --password "mi-clave-secreta"
 ```
 
+El cifrado requiere opcionalmente `cryptography`:
+`python3 -m pip install cryptography`. Copia `dashboard_banners.example.json` como
+`dashboard_banners.json` para agregar banners personales al dashboard; ese archivo está
+ignorado por Git. No hay datos personales específicos embebidos en el código por defecto.
+
 #### Generar Guía Móvil / PWA de Estudio (`study`)
 Compila tus notas técnicas de `notas/*.md` en una PWA estática instalable en `sitio_estudio/`:
 ```bash
@@ -115,13 +122,21 @@ npm run tracker:study
 
 ## 📱 Modo Móvil & Despliegue en GitHub Pages
 
-Puedes publicar tu Centro de Mando y tu guía de estudio directamente a GitHub Pages con un solo comando:
+Puedes publicar la guía de estudio directamente a GitHub Pages con un solo comando:
 
 ```bash
 npm run deploy:ghpages
 ```
 
-El script prepara automáticamente un artefacto aislado con el archivo `.nojekyll` y lo sube a la rama `gh-pages` de tu repositorio.
+Por seguridad, el script publica solo la PWA de estudio por defecto. El dashboard personal
+solo se incluye si se solicita explícitamente y se proporciona una contraseña:
+
+```bash
+DASHBOARD_PASSWORD='mi-clave-secreta' npm run deploy:ghpages -- --include-dashboard
+```
+
+El script prepara un artefacto aislado con `.nojekyll` y lo sube a la rama `gh-pages`;
+nunca publica un dashboard sin cifrar.
 
 ---
 

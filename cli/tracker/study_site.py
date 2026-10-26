@@ -407,7 +407,7 @@ INDEX_TEMPLATE = """<!doctype html>
   <button class="icon-btn" id="btn-top-search" type="button" data-action="toggle-search" aria-label="Buscar en guía" aria-expanded="false">
     <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
   </button>
-  <a href="./index.html" class="top-dash-link">📊 Dashboard</a>
+  <a href="../postulaciones/dashboard_postulaciones.html" class="top-dash-link">📊 Dashboard</a>
   <span class="global-chip" title="Avance total"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span id="global-pct">0%</span></span>
 </header>
 
@@ -488,7 +488,7 @@ __DOCS__
 <nav class="bottom-nav" aria-label="Navegación rápida móvil">
   <button class="bnav-btn" type="button" data-nav-doc="plan">
     <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
-    <span>ALPRO</span>
+    <span>Plan</span>
   </button>
   <button class="bnav-btn" type="button" data-nav-doc="ngicaja">
     <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>

@@ -35,6 +35,30 @@ const TRACKER_PY = path.join(__dirname, "tracker.py");
 const STUDY_SITE_PY = path.join(__dirname, "study_site.py");
 const DASHBOARD_HTML = path.join(ROOT_DIR, "postulaciones", "dashboard_postulaciones.html");
 const PORT = Number(process.env.PORT || 4321);
+const HOST = process.env.HOST || "127.0.0.1";
+const MAX_BODY_BYTES = 16 * 1024;
+const DENIED_SEGMENTS = new Set([
+  ".git",
+  ".agents",
+  "node_modules",
+  "ofertas",
+  "notas",
+  "pdfs_oficiales",
+  "fuentes_html",
+]);
+
+function isDeniedStaticPath(targetPath: string): boolean {
+  const relative = path.relative(ROOT_DIR, targetPath);
+  const segments = relative.split(path.sep);
+  if (segments.some((segment) => segment.startsWith(".") || DENIED_SEGMENTS.has(segment))) return true;
+  return /\.(csv|env|secret|md|py|ts)$/i.test(targetPath);
+}
+
+function writeSecurityHeaders(res: http.ServerResponse): void {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Cache-Control", "no-store");
+}
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -58,20 +82,43 @@ function regenerateDashboard(): void {
 
 const server = http.createServer((req, res) => {
   try {
+    writeSecurityHeaders(res);
     const rawUrl = (req.url || "/").split("?")[0];
     const decodedPath = decodeURIComponent(rawUrl);
 
     if (req.method === "POST" && decodedPath === "/api/toggle-check") {
+      if (!req.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
+        res.writeHead(415, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "Content-Type must be application/json" }));
+        return;
+      }
       let body = "";
+      let bodyBytes = 0;
+      let rejected = false;
       req.on("data", (chunk) => {
-        body += chunk;
+        bodyBytes += Buffer.byteLength(chunk);
+        if (bodyBytes > MAX_BODY_BYTES) {
+          rejected = true;
+          return;
+        }
+        if (!rejected) body += chunk;
       });
       req.on("end", () => {
         try {
+          if (rejected) {
+            res.writeHead(413, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({ ok: false, error: "Request body too large" }));
+            return;
+          }
           const payload = JSON.parse(body || "{}");
           const safeFile = path.basename(String(payload.filename || ""));
           const lineIdx = Number(payload.lineIdx);
-          const checked = Boolean(payload.checked);
+          const checked = payload.checked;
+          if (!safeFile || !Number.isInteger(lineIdx) || lineIdx < 0 || typeof checked !== "boolean") {
+            res.writeHead(422, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({ ok: false, error: "Invalid filename, lineIdx, or checked value" }));
+            return;
+          }
 
           const candidateDirs = [path.join(ROOT_DIR, "notas"), path.join(ROOT_DIR, "ofertas")];
           let targetMd = "";
@@ -83,22 +130,30 @@ const server = http.createServer((req, res) => {
             }
           }
 
-          if (targetMd && Number.isInteger(lineIdx) && lineIdx >= 0) {
+          if (targetMd) {
             const lines = fs.readFileSync(targetMd, "utf-8").replace(/\r\n/g, "\n").split("\n");
-            if (lineIdx < lines.length) {
+            if (lineIdx < lines.length && /^\s*[-*]\s+\[[ xX]\]\s+/.test(lines[lineIdx])) {
               lines[lineIdx] = lines[lineIdx].replace(
                 /^(\s*[-*]\s+\[)[ xX](\]\s+)/,
                 `$1${checked ? "x" : " "}$2`
               );
               fs.writeFileSync(targetMd, lines.join("\n"), "utf-8");
               regenerateDashboard();
+            } else {
+              res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+              res.end(JSON.stringify({ ok: false, error: "Checklist line not found" }));
+              return;
             }
+          } else {
+            res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({ ok: false, error: "Document not found" }));
+            return;
           }
           res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
           res.end(JSON.stringify({ ok: true }));
         } catch (e) {
           res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-          res.end(JSON.stringify({ ok: false }));
+          res.end(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : "Invalid request" }));
         }
       });
       return;
@@ -118,7 +173,12 @@ const server = http.createServer((req, res) => {
       targetPath = path.join(targetPath, "index.html");
     }
 
-    if (!targetPath.startsWith(ROOT_DIR) || !fs.existsSync(targetPath) || fs.statSync(targetPath).isDirectory()) {
+    if (
+      (targetPath !== ROOT_DIR && !targetPath.startsWith(`${ROOT_DIR}${path.sep}`)) ||
+      isDeniedStaticPath(targetPath) ||
+      !fs.existsSync(targetPath) ||
+      fs.statSync(targetPath).isDirectory()
+    ) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Recurso no encontrado");
       return;
@@ -135,8 +195,8 @@ const server = http.createServer((req, res) => {
 });
 
 regenerateDashboard();
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[OK] Centro de Mando activo en: http://localhost:${PORT}/postulaciones/dashboard_postulaciones.html`);
-  console.log(`[OK] Guía Móvil / PWA activa en: http://localhost:${PORT}/sitio_estudio/index.html`);
+server.listen(PORT, HOST, () => {
+  console.log(`[OK] Centro de Mando activo en: http://${HOST}:${PORT}/postulaciones/dashboard_postulaciones.html`);
+  console.log(`[OK] Guía Móvil / PWA activa en: http://${HOST}:${PORT}/sitio_estudio/index.html`);
   console.log(`[OK] Archivo estático: ${DASHBOARD_HTML}`);
 });

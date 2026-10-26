@@ -1,0 +1,22 @@
+[
+  {
+    "priority": "Prioridad 1 · Esta semana",
+    "stageBadge": "Preparación activa",
+    "title": "Preparar entrevista técnica",
+    "tags": [
+      {
+        "lbl": "Objetivo",
+        "val": "Repasar arquitectura, APIs y comunicación técnica",
+        "icon": "code"
+      }
+    ],
+    "actions": [
+      {
+        "btnClass": "btn btn-primary",
+        "label": "Abrir plan de estudio",
+        "type": "notas",
+        "file": "PLAN_ESTUDIO.md"
+      }
+    ]
+  }
+]
