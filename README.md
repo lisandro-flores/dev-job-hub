@@ -93,6 +93,12 @@ npm run tracker:followup
 python3 cli/tracker/tracker.py followup --days 14
 ```
 
+#### Validar datos (`validate`)
+Comprueba que el CSV tenga todas las columnas esperadas y fechas ISO válidas:
+```bash
+npm run tracker:validate
+```
+
 #### Mapa de Calor de Tecnologías (`skills`)
 Escanea todas las fichas guardadas en `ofertas/*.md` y genera el reporte de demanda:
 ```bash
@@ -192,6 +198,11 @@ dev-job-hub/
 └── scripts/
     └── deploy_ghpages.sh          # Script de despliegue automatizado a GitHub Pages
 ```
+
+## 🗺️ Roadmap
+
+Consulta [`ROADMAP.md`](./ROADMAP.md) para ver el estado actual, las mejoras
+priorizadas y los criterios de terminado del proyecto.
 
 ---
 

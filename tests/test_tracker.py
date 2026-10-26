@@ -32,6 +32,18 @@ class TrackerTests(unittest.TestCase):
         finally:
             tracker.CSV_PATH = original
 
+    def test_validate_rejects_missing_csv_columns(self):
+        original = tracker.CSV_PATH
+        try:
+            with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".csv") as csv_file:
+                csv_file.write("empresa,estado\nAcme,Postulado\n")
+                csv_file.flush()
+                tracker.CSV_PATH = csv_file.name
+                with self.assertRaises(ValueError):
+                    tracker.load_rows()
+        finally:
+            tracker.CSV_PATH = original
+
     def test_study_sanitizer_removes_private_lines(self):
         content = (
             "# Study\n"

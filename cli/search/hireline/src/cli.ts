@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
+import { fileURLToPath } from "node:url";
+
 const BASE_SEARCH_URL = "https://hireline.io/mx/empleos";
 
-function cleanText(html: string | undefined | null): string {
+export function cleanText(html: string | undefined | null): string {
   if (!html) return "";
   return html
     .replace(/<\/(p|li|h[1-6]|div|ul|ol|br)>/gi, "\n")
@@ -32,7 +34,7 @@ interface HirelineJobSummary {
   url: string;
 }
 
-function parseSearchCards(html: string): HirelineJobSummary[] {
+export function parseSearchCards(html: string): HirelineJobSummary[] {
   const results: HirelineJobSummary[] = [];
   const cardRegex =
     /<a\s+href="([^"]+)"\s+class="hl-vacancy-card\s+vacancy-container"[^>]*>([\s\S]*?)<\/a>/gi;
@@ -292,8 +294,9 @@ async function main() {
   process.exit(1);
 }
 
-main().catch((err) => {
-  console.error("Error:", err.message);
-  process.exit(1);
-});
-
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((err) => {
+    console.error("Error:", err.message);
+    process.exit(1);
+  });
+}

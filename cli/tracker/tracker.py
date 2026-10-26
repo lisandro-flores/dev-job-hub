@@ -35,6 +35,20 @@ CSV_CANDIDATES = [
     os.path.join(ROOT_DIR, "templates", "SEGUIMIENTO.template.csv"),
 ]
 CSV_PATH = next((p for p in CSV_CANDIDATES if os.path.exists(p)), os.path.join(ROOT_DIR, "SEGUIMIENTO_POSTULACIONES.csv"))
+REQUIRED_CSV_COLUMNS = {
+    "fecha",
+    "empresa",
+    "puesto",
+    "url_vacante",
+    "fuente",
+    "cv_enviado",
+    "contacto",
+    "estado",
+    "proxima_accion",
+    "fecha_seguimiento",
+    "salario",
+    "notas",
+}
 OFERTAS_DIR = os.path.join(ROOT_DIR, "ofertas")
 NOTAS_DIR = os.path.join(ROOT_DIR, "notas")
 PDFS_DIR = os.path.join(ROOT_DIR, "pdfs_oficiales")
@@ -83,7 +97,29 @@ def load_rows():
         return []
     with open(CSV_PATH, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
+        actual = set(reader.fieldnames or [])
+        missing = REQUIRED_CSV_COLUMNS - actual
+        if missing:
+            raise ValueError(
+                f"CSV inválido: faltan columnas requeridas: {', '.join(sorted(missing))}"
+            )
         return [r for r in reader if any(r.values())]
+
+
+def cmd_validate(_args):
+    rows = load_rows()
+    invalid_dates = []
+    for index, row in enumerate(rows, start=2):
+        date_value = (row.get("fecha_seguimiento") or "").strip()
+        if date_value:
+            try:
+                datetime.date.fromisoformat(date_value)
+            except ValueError:
+                invalid_dates.append(f"línea {index}: fecha_seguimiento={date_value!r}")
+    if invalid_dates:
+        raise ValueError("CSV inválido: " + "; ".join(invalid_dates))
+    print(f"CSV válido: {len(rows)} registros en {CSV_PATH}")
+    return 0
 
 
 def load_dashboard_banners():
@@ -2192,6 +2228,8 @@ def main():
     p_s = sub.add_parser("skills", help="Analiza demanda de tecnologias en el CSV y ofertas/")
     p_s.add_argument("--format", choices=["text", "json"], default="text")
 
+    sub.add_parser("validate", help="Valida el esquema y fechas del CSV")
+
     p_r = sub.add_parser("report", help="Genera dashboard HTML offline desde el CSV")
     p_r.add_argument("--out", type=str, default=None, help="Ruta de salida del HTML")
     p_r.add_argument("--password", type=str, default=None, help="Clave secreta para cifrar el dashboard")
@@ -2202,6 +2240,8 @@ def main():
         return cmd_followup(args)
     if args.cmd == "skills":
         return cmd_skills(args)
+    if args.cmd == "validate":
+        return cmd_validate(args)
     if args.cmd == "report":
         return cmd_report(args)
     parser.print_help()

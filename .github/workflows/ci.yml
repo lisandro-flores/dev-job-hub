@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate Python and shell
+        run: |
+          python -m py_compile cli/tracker/tracker.py cli/tracker/study_site.py
+          bash -n scripts/deploy_ghpages.sh
+      - name: Run tests
+        run: npm test
+      - name: Run TypeScript parser tests
+        run: npm run test:cli
+      - name: Validate sample data
+        run: npm run tracker:validate

@@ -11,9 +11,11 @@
     "search:freehire": "node --experimental-strip-types --no-warnings cli/search/freehire/src/cli.ts search",
     "tracker:followup": "python3 cli/tracker/tracker.py followup",
     "tracker:skills": "python3 cli/tracker/tracker.py skills",
+    "tracker:validate": "python3 cli/tracker/tracker.py validate",
     "tracker:report": "python3 cli/tracker/tracker.py report",
     "tracker:study": "python3 cli/tracker/study_site.py",
     "test": "python3 -m unittest discover -s tests -v",
+    "test:cli": "node --experimental-strip-types --test tests/test_cli_parsers.mjs",
     "deploy:ghpages": "./scripts/deploy_ghpages.sh"
   },
   "keywords": [
